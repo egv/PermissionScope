@@ -268,7 +268,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
                 button.setTitle("Allowed \(prettyName)".localized.uppercaseString, forState: .Normal)
             } else if currentStatus == .Unauthorized {
                 setButtonUnauthorizedStyle(button)
-                button.setTitle("Denied \(prettyName)".localized.uppercaseString, forState: .Normal)
+                button.setTitle("GRANT ACCESS".uppercaseString, forState: .Normal)
             } else if currentStatus == .Disabled {
 //                setButtonDisabledStyle(button)
                 button.setTitle("\(prettyName) Disabled".localized.uppercaseString, forState: .Normal)
