@@ -590,8 +590,22 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
                 completion: { (granted, error) -> Void in
                     self.detectAndCallback()
             })
-        case .Unauthorized:
-            self.showDeniedAlert(.Events)
+        case .Unauthorized:            
+            var alert = UIAlertController(title: "Permission for Calendar was denied.",
+                message: "Please enable access to Calendar in the App's Settings",
+                preferredStyle: .Alert)
+            alert.addAction(UIAlertAction(title: "OK",
+                style: .Cancel,
+                handler: nil))
+            alert.addAction(UIAlertAction(title: "Change",
+                style: .Default,
+                handler: { (action) -> Void in
+                    let settingsUrl = NSURL(string: UIApplicationOpenSettingsURLString)
+                    UIApplication.sharedApplication().openURL(settingsUrl!)
+            }))
+            self.presentViewController(alert,
+                animated: true, completion: nil)
+
         default:
             break
         }
