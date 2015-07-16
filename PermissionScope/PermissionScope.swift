@@ -601,7 +601,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
                     UIApplication.sharedApplication().openURL(settingsUrl!)
             }))
             alert.addAction(UIAlertAction(title: "OK",
-                style: .Cancel,
+                style: .Default,
                 handler: nil))
             self.presentViewController(alert,
                 animated: true, completion: nil)
