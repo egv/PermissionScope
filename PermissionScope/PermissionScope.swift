@@ -71,7 +71,7 @@ public struct PermissionConfig {
     }
 }
 
-public struct PermissionResult: Printable {
+public struct PermissionResult: CustomStringConvertible {
     public let type: PermissionType
     public let status: PermissionStatus
     public let demands: PermissionDemands
@@ -156,7 +156,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
 
         // Set up main view
         view.frame = UIScreen.mainScreen().bounds
-        view.autoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth
+        view.autoresizingMask = [UIViewAutoresizing.FlexibleHeight, UIViewAutoresizing.FlexibleWidth]
         view.backgroundColor = UIColor(red:0, green:0, blue:0, alpha:0.7)
         view.addSubview(baseView)
         // Base View
@@ -204,7 +204,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
         self.init(backgroundTapCancels: true)
     }
 
-    required public init(coder aDecoder: NSCoder) {
+    required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -214,11 +214,11 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
 
     public override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
-        var screenSize = UIScreen.mainScreen().bounds.size
+        let screenSize = UIScreen.mainScreen().bounds.size
         // Set background frame
         view.frame.size = screenSize
         // Set frames
-        var x = (screenSize.width - contentWidth) / 2
+        let x = (screenSize.width - contentWidth) / 2
 
         let dialogHeight: CGFloat
         switch self.configuredPermissions.count {
@@ -230,23 +230,23 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
             dialogHeight = 260
         }
         
-        var y = (screenSize.height - dialogHeight) / 2
+        let y = (screenSize.height - dialogHeight) / 2
         contentView.frame = CGRect(x:x, y:y, width:contentWidth, height:dialogHeight)
 
         // offset the header from the content center, compensate for the content's offset
         headerLabel.center = contentView.center
-        headerLabel.frame.offset(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
-        headerLabel.frame.offset(dx: 0, dy: -((dialogHeight/2)-50))
+        headerLabel.frame.offsetInPlace(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
+        headerLabel.frame.offsetInPlace(dx: 0, dy: -((dialogHeight/2)-50))
 
         // ... same with the body
         bodyLabel.center = contentView.center
-        bodyLabel.frame.offset(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
-        bodyLabel.frame.offset(dx: 0, dy: -((dialogHeight/2)-100))
+        bodyLabel.frame.offsetInPlace(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
+        bodyLabel.frame.offsetInPlace(dx: 0, dy: -((dialogHeight/2)-100))
         
         closeButton.center = contentView.center
-        closeButton.frame.offset(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
-        closeButton.frame.offset(dx: 105, dy: -((dialogHeight/2)-20))
-        closeButton.frame.offset(dx: self.closeOffset.width, dy: self.closeOffset.height)
+        closeButton.frame.offsetInPlace(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
+        closeButton.frame.offsetInPlace(dx: 105, dy: -((dialogHeight/2)-20))
+        closeButton.frame.offsetInPlace(dx: self.closeOffset.width, dy: self.closeOffset.height)
         if closeButton.imageView?.image != nil {
             closeButton.setTitle("", forState: UIControlState.Normal)
         }
@@ -256,8 +256,8 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
         var index = 0
         for button in permissionButtons {
             button.center = contentView.center
-            button.frame.offset(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
-            button.frame.offset(dx: 0, dy: -((dialogHeight/2)-160) + CGFloat(index * baseOffset))
+            button.frame.offsetInPlace(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
+            button.frame.offsetInPlace(dx: 0, dy: -((dialogHeight/2)-160) + CGFloat(index * baseOffset))
             
             let type = configuredPermissions[index].type
             
@@ -276,8 +276,8 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
 
             let label = permissionLabels[index]
             label.center = contentView.center
-            label.frame.offset(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
-            label.frame.offset(dx: 0, dy: -((dialogHeight/2)-205) + CGFloat(index * baseOffset))
+            label.frame.offsetInPlace(dx: -contentView.frame.origin.x, dy: -contentView.frame.origin.y)
+            label.frame.offsetInPlace(dx: 0, dy: -((dialogHeight/2)-205) + CGFloat(index * baseOffset))
 
             index++
         }
@@ -445,12 +445,15 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
 
     // TODO: can we tell if notifications has been denied?
     public func statusNotifications() -> PermissionStatus {
-        let settings = UIApplication.sharedApplication().currentUserNotificationSettings()
-        if settings.types != UIUserNotificationType.None {
-            return .Authorized
-        } else {
-            return .Unknown
+        if let settings = UIApplication.sharedApplication().currentUserNotificationSettings() {
+            if settings.types != UIUserNotificationType.None {
+                return .Authorized
+            } else {
+                return .Unknown
+            }
         }
+
+        return .Unknown
     }
     
     func requestNotifications() {
@@ -459,7 +462,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
             // There should be only one...
             let notificationsPermissionSet = self.configuredPermissions.filter { $0.notificationCategories != .None && !$0.notificationCategories!.isEmpty }.first?.notificationCategories
 
-            UIApplication.sharedApplication().registerUserNotificationSettings(UIUserNotificationSettings(forTypes: .Alert | .Sound | .Badge,
+            UIApplication.sharedApplication().registerUserNotificationSettings(UIUserNotificationSettings(forTypes: [.Alert, .Sound, .Badge],
                 categories: notificationsPermissionSet))
             
             self.pollForNotificationChanges()
@@ -546,7 +549,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
     }
     
     public func statusReminders() -> PermissionStatus {
-        let status = EKEventStore.authorizationStatusForEntityType(EKEntityTypeReminder)
+        let status = EKEventStore.authorizationStatusForEntityType(EKEntityType.Reminder)
         switch status {
         case .Authorized:
             return .Authorized
@@ -560,7 +563,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
     func requestReminders() {
         switch statusReminders() {
         case .Unknown:
-            EKEventStore().requestAccessToEntityType(EKEntityTypeReminder,
+            EKEventStore().requestAccessToEntityType(EKEntityType.Reminder,
                 completion: { (granted, error) -> Void in
                     self.detectAndCallback()
             })
@@ -572,7 +575,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
     }
     
     public func statusEvents() -> PermissionStatus {
-        let status = EKEventStore.authorizationStatusForEntityType(EKEntityTypeEvent)
+        let status = EKEventStore.authorizationStatusForEntityType(EKEntityType.Event)
         switch status {
         case .Authorized:
             return .Authorized
@@ -586,12 +589,12 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
     func requestEvents() {
         switch statusEvents() {
         case .Unknown:
-            EKEventStore().requestAccessToEntityType(EKEntityTypeEvent,
+            EKEventStore().requestAccessToEntityType(EKEntityType.Event,
                 completion: { (granted, error) -> Void in
                     self.detectAndCallback()
             })
         case .Unauthorized:            
-            var alert = UIAlertController(title: "Permission for Calendar was denied.",
+            let alert = UIAlertController(title: "Permission for Calendar was denied.",
                 message: "Please enable access to Calendar in the App's Settings",
                 preferredStyle: .Alert)
             alert.addAction(UIAlertAction(title: "Settings",
@@ -629,10 +632,11 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
             
             pollCount?++
             
-            let settings = UIApplication.sharedApplication().currentUserNotificationSettings()
-            println("polling \(settings)")
-            if settings.types != UIUserNotificationType.None {
-                self.detectAndCallback()
+            if let settings = UIApplication.sharedApplication().currentUserNotificationSettings() {
+                print("polling \(settings)")
+                if settings.types != UIUserNotificationType.None {
+                    self.detectAndCallback()
+                }
             }
         }
         if pollCount == pollMax {
@@ -750,7 +754,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
         var results: [PermissionResult] = []
 
         for config in configuredPermissions {
-            var status = statusForPermission(config.type)
+            let status = statusForPermission(config.type)
             let result = PermissionResult(type: config.type, status: status, demands: config.demands)
             results.append(result)
         }
@@ -759,7 +763,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
     }
 
     func showDeniedAlert(permission: PermissionType) {
-        var alert = UIAlertController(title: "Permission for \(permission.rawValue) was denied.",
+        let alert = UIAlertController(title: "Permission for \(permission.rawValue) was denied.",
             message: "Please enable access to \(permission.rawValue) in the App's Settings",
             preferredStyle: .Alert)
         alert.addAction(UIAlertAction(title: "OK",
@@ -776,7 +780,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
     }
     
     func showDisabledAlert(permission: PermissionType) {
-        var alert = UIAlertController(title: "\(permission.rawValue) is currently disabled.",
+        let alert = UIAlertController(title: "\(permission.rawValue) is currently disabled.",
             message: "Please enable access to \(permission.rawValue) in Settings",
             preferredStyle: .Alert)
         alert.addAction(UIAlertAction(title: "OK",
@@ -800,7 +804,7 @@ public class PermissionScope: UIViewController, CLLocationManagerDelegate, UIGes
 
     // MARK: location delegate
 
-    public func locationManager(manager: CLLocationManager!, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
+    public func locationManager(manager: CLLocationManager, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
 
         detectAndCallback()
     }
